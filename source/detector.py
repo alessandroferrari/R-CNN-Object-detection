@@ -3,10 +3,6 @@
 This a version of the caffe python detector modified by Alessandro Ferrari 
 (alessandroferrari87@gmail.com).
 
-Example usage:
-
-python detect.py --crop_mode=bing --pretrained_model=/home/alessandro/caffe/models/bvlc_reference_rcnn_ilsvrc13/bvlc_reference_rcnn_ilsvrc13.caffemodel --model_def=/home/alessandro/caffe/models/bvlc_reference_rcnn_ilsvrc13/deploy.prototxt --mean_file=/home/alessandro/caffe/python/caffe/imagenet/ilsvrc_2012_mean.npy --gpu --raw_scale=255 --weights_1st_stage_bing /opt/Datasets/VOC2007/BING_Results/weights.txt --sizes_idx_bing /opt/Datasets/VOC2007/BING_Results/sizes.txt --weights_2nd_stage_bing /opt/Datasets/VOC2007/BING_Results/2nd_stage_weights.json  /opt/Datasets/VOC2007/BING_Results/images.txt /opt/Datasets/VOC2007/BING_Results/det_output.h5
-
 Do windowed detection by classifying a number of images/crops at once,
 optionally using the selective search window proposal method.
 
@@ -16,9 +12,7 @@ This implementation follows ideas in
     segmentation.
     http://arxiv.org/abs/1311.2524
 
-The selective_search_ijcv_with_python code required for the selective search
-proposal mode is available at
-    https://github.com/sergeyk/selective_search_ijcv_with_python
+Bing code is available at https://github.com/alessandroferrari/BING-Objectness .
 """
 
 import os
@@ -36,11 +30,14 @@ except Exception:
     warnings.warn("Impossible to import bing.")
     bing_flag = False
 
-def resize_image(image):
+def resize_image(image, reference_edge = 512.0):
     
-    h,w,nch = image.shape
+    if image.ndim==3:
+        h,w,nch = image.shape
+    else:
+        h,w = image.shape
     max_edge = max(w,h)
-    ratio = 500.0 / max_edge
+    ratio = float(reference_edge) / max_edge
     new_w = ratio * w
     new_h = ratio * h
     image = cv2.resize(image,(int(new_w),int(new_h)), interpolation=cv2.INTER_CUBIC)

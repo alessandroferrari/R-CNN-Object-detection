@@ -1,19 +1,29 @@
 #!/usr/bin/env python
 """
-detector.py is an out-of-the-box windowed detector
-callable from the command line.
+This a modified version of the object detector available from caffe.
+A good starting point thus is to take a look at the original version:
+http://nbviewer.ipython.org/github/BVLC/caffe/blob/master/examples/detection.ipynb
+The version has been modified by Alessandro Ferrari (alessandroferrari87@gmail.com).
+
+detect.py is an out-of-the-box windowed detector callable from the command line.
 
 By default it configures and runs the Caffe reference ImageNet model.
 Note that this model was trained for image classification and not detection,
 and finetuning for detection can be expected to improve results.
 
-The selective_search_ijcv_with_python code required for the selective search
-proposal mode is available at
-    https://github.com/sergeyk/selective_search_ijcv_with_python
+Bing code is available at https://github.com/alessandroferrari/BING-Objectness .
 
-TODO:
-- batch up image filenames as well: don't want to load all of them into memory
-- come up with a batching scheme that preserved order / keeps a unique ID
+Example usage:
+
+python detect.py --crop_mode=bing 
+--pretrained_model=/path/to/caffe/models/bvlc_reference_rcnn_ilsvrc13/bvlc_reference_rcnn_ilsvrc13.caffemodel 
+--model_def=/path/to/caffe/models/bvlc_reference_rcnn_ilsvrc13/deploy.prototxt 
+--mean_file=/path/to/caffe/python/caffe/imagenet/ilsvrc_2012_mean.npy --gpu 
+--raw_scale=255 --weights_1st_stage_bing /path/to/BING-Objectness/doc/weights.txt 
+--sizes_idx_bing /path/to/BING-Objectness/doc/sizes.txt 
+--weights_2nd_stage_bing /path/to/BING-Objectness/doc/2nd_stage_weights.json 
+--num_bbs_final 2000 --detection_threshold 0.1 /path/to/pictures/image.jpg 
+/path/to/results/output.jpg /path/to/caffe/data/ilsvrc12/det_synset_words.txt
 """
 import os
 import cv2
@@ -22,7 +32,6 @@ import json
 import caffe
 import argparse
 import numpy as np
-import pandas as pd
 from random import randint
 from skimage.io import imread
 from detector import Detector, resize_image
@@ -183,6 +192,12 @@ def main(argv):
         help="Score threshold for determining positive detection from the convolutional network."
     )
     parser.add_argument(
+        "--reference_edge",
+        type=float,
+        default=512.0,
+        help="Size to which rescale the maximum edge of the image. The rescaling mantain the proportions in the image."
+    )
+    parser.add_argument(
         "synset_file",
         help="Filename that contains the synset that corresponds to the classes of the network."
     )
@@ -196,7 +211,7 @@ def main(argv):
         s = f.readline()
         if s=='':
             break
-        name = s[s.find(" ")+1:]
+        name = s[s.find(" ")+1:].replace("\n","")
         synset_dict[counter] = name
         counter = counter + 1
     f.close()
@@ -253,7 +268,7 @@ def main(argv):
 
     image_fn = args.image_file
     image = imread(image_fn)
-    image = resize_image(image)
+    image = resize_image(image, args.reference_edge)
 
     if args.crop_mode == "bing":
         detections, predictions = detector.detect_bing(image)
@@ -279,9 +294,7 @@ def main(argv):
             score = detection[4]
             bb = detection[:4].astype(int)
             resulting_bbs.append((bb,score,synset_dict[cls]))
-    
-    print "Resulting detections:",resulting_bbs
-    
+        
     image = cv2.cvtColor(image, cv2.cv.CV_RGB2BGR)
     
     for bb, det_score, class_name in resulting_bbs:
