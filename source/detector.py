@@ -96,7 +96,7 @@ class Detector(caffe.Net):
                 
         
         t0 = time.time()
-        bbs = self.bing.predict(image)
+        bbs, scores = self.bing.predict(image)
         t1 = time.time()
         print "Bing prediction: {0:.2f}s.".format(t1-t0)
         images_windows = self.detect_windows(image, bbs)

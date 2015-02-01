@@ -14,12 +14,12 @@ Objects detection takes approximately 15 seconds for image on an Intel i7 4930K 
 
 Dependencies:
 
--Python
--Caffe
--numpy
--opencv
--scikit-image
--BING-Objectness (available at https://github.com/alessandroferrari/BING-Objectness )
+- Python
+- Caffe
+- numpy
+- opencv
+- scikit-image
+- BING-Objectness (available at https://github.com/alessandroferrari/BING-Objectness )
 
 For explaination on the usage:
 
